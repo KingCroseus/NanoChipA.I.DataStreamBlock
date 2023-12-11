@@ -1,0 +1,73 @@
+import numpy as np
+
+class DataStorageError(Exception):
+    pass
+
+class NanoChip:
+    def __init__(self, capacity: int, power_consumption: float):
+        if capacity < 0:
+            raise ValueError("Capacity cannot be negative.")
+        if power_consumption < 0:
+            raise ValueError("Power consumption cannot be negative.")
+
+        self._capacity = capacity
+        self._power_consumption = power_consumption
+
+    def store_data(self, data_size: int):
+        if data_size <= self._capacity:
+            self._capacity -= data_size
+            return True
+        else:
+            raise DataStorageError("Not enough storage capacity to store the data.")
+
+    @property
+    def remaining_capacity(self):
+        return self._capacity
+
+    @property
+    def power_consumption(self):
+        return self._power_consumption
+
+
+class AIController:
+    def __init__(self, nano_chip: NanoChip):
+        self._nano_chip = nano_chip
+
+    def manage_data_storage(self, data_size: int):
+        if data_size <= self._nano_chip.remaining_capacity:
+            threshold = np.random.uniform(0.8, 1.0)
+            if data_size <= self._nano_chip.remaining_capacity * threshold:
+                self._nano_chip.store_data(data_size)
+                print(f"Data of size {data_size} GB stored successfully.")
+            else:
+                print(f"Not enough storage capacity to store data of size {data_size} GB.")
+        else:
+            raise DataStorageError("Not enough storage capacity to store the data.")
+
+class DataStreamBlock:
+    def __init__(self, capacity: int, power_consumption: float):
+        self._nano_chip = NanoChip(capacity, power_consumption)
+        self._ai_controller = AIController(self._nano_chip)
+
+    def store_data_on_chip(self, data_size: int):
+        return self._ai_controller.manage_data_storage(data_size)
+
+    @property
+    def remaining_capacity(self):
+        return self._nano_chip.remaining_capacity
+
+    @property
+    def power_consumption(self):
+        return self._nano_chip.power_consumption
+
+# Example usage:
+
+data_stream_block = DataStreamBlock(100, 5)
+data_size = 50
+data_stream_block.store_data_on_chip(data_size)
+
+remaining_capacity = data_stream_block.remaining_capacity
+print(f"Remaining capacity of the nano chip: {remaining_capacity} GB.")
+
+power_consumption = data_stream_block.power_consumption
+print(f"Power consumption of the nano chip: {power_consumption} W.")
