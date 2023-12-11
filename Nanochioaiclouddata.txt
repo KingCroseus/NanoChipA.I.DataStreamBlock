@@ -1,0 +1,426 @@
+import hashlib
+
+class DataStorageError(Exception):
+    """
+    Custom exception class for data storage errors.
+    """
+
+    pass
+
+
+class NanoChip:
+    """
+    A class representing a nano chip used for data storage.
+
+    Attributes:
+    - capacity (int): The maximum storage capacity of the nano chip.
+    - power_consumption (float): The power consumption of the nano chip.
+    """
+
+    def __init__(self, capacity: int, power_consumption: float):
+        """
+        Constructs a new NanoChip instance.
+
+        Parameters:
+        - capacity (int): The maximum storage capacity of the nano chip.
+        - power_consumption (float): The power consumption of the nano chip.
+
+        Raises:
+        - ValueError: If the capacity or power consumption is negative.
+        """
+
+        # Verifying that the capacity and power consumption are non-negative.
+        if capacity < 0:
+            raise ValueError("Capacity cannot be negative.")
+        if power_consumption < 0:
+            raise ValueError("Power consumption cannot be negative.")
+
+        # Assigning the capacity and power consumption to the instance variables.
+        self._capacity = capacity
+        self._power_consumption = power_consumption
+
+    def store_data(self, data_size: int):
+        """
+        Stores data on the nano chip.
+
+        Parameters:
+        - data_size (int): The size of the data to be stored.
+
+        Returns:
+        bool: True if the data was successfully stored, False otherwise.
+
+        Raises:
+        - DataStorageError: If there is not enough storage capacity to store the data.
+        """
+
+        # Checking if there is enough storage capacity to store the data.
+        if data_size <= self._capacity:
+            # Updating the remaining capacity after storing the data.
+            self._capacity -= data_size
+            return True
+        else:
+            raise DataStorageError("Not enough storage capacity to store the data.")
+
+    @property
+    def remaining_capacity(self):
+        """
+        Gets the remaining storage capacity of the nano chip.
+
+        Returns:
+        int: The remaining storage capacity.
+        """
+
+        return self._capacity
+
+    @property
+    def power_consumption(self):
+        """
+        Gets the power consumption of the nano chip.
+
+        Returns:
+        float: The power consumption.
+        """
+
+        return self._power_consumption
+
+
+class AIController:
+    """
+    A class representing an AI controller that manages data storage.
+
+    Attributes:
+    - nano_chip (NanoChip): The nano chip used for data storage.
+    - cloud (VirtualCloud): The virtual cloud for storing data.
+    """
+
+    def __init__(self, nano_chip: NanoChip, cloud: 'VirtualCloud'):
+        """
+        Constructs a new AIController instance.
+
+        Parameters:
+        - nano_chip (NanoChip): The nano chip used for data storage.
+        - cloud (VirtualCloud): The virtual cloud for storing data.
+        """
+
+        self._nano_chip = nano_chip
+        self._cloud = cloud
+
+    def manage_data_storage(self, data_size: int, key: str, value: any):
+        """
+        Manages the storage of data.
+
+        Parameters:
+        - data_size (int): The size of the data to be stored.
+        - key (str): The key associated with the data.
+        - value (any): The value of the data.
+
+        Raises:
+        - DataStorageError: If there is not enough storage capacity to store the data.
+        """
+
+        # Checking if there is enough storage capacity to store the data on the nano chip.
+        if data_size <= self._nano_chip.remaining_capacity:
+            # Storing the data on the nano chip.
+            self._nano_chip.store_data(data_size)
+            # Storing the data in the virtual cloud and updating the remaining capacity.
+            self._cloud.store_data(key, value, self._nano_chip.remaining_capacity)
+            print(f"Data of size {data_size} GB stored successfully.")
+        else:
+            raise DataStorageError("Not enough storage capacity to store the data.")
+
+
+class DataStreamBlock:
+    """
+    A class representing a data stream block.
+
+    Attributes:
+    - nano_chip (NanoChip): The nano chip used for data storage.
+    - ai_controller (AIController): The AI controller for managing data storage.
+    """
+
+    def __init__(self, capacity: int, threshold: float, cloud: 'VirtualCloud'):
+        """
+        Constructs a new DataStreamBlock instance.
+
+        Parameters:
+        - capacity (int): The maximum storage capacity of the nano chip.
+        - threshold (float): The threshold for power consumption of the nano chip.
+        - cloud (VirtualCloud): The virtual cloud for storing data.
+        """
+
+        # Creating a new nano chip with the given capacity and threshold.
+        self._nano_chip = NanoChip(capacity, threshold)
+        # Creating a new AI controller with the nano chip and virtual cloud.
+        self._ai_controller = AIController(self._nano_chip, cloud)
+
+    def store_data_on_chip(self, data_size: int, key: str, value: any) -> str:
+        """
+        Stores data on the nano chip.
+
+        Parameters:
+        - data_size (int): The size of the data to be stored.
+        - key (str): The key associated with the data.
+        - value (any): The value of the data.
+
+        Returns:
+        str: A message indicating the success of storing the data.
+
+        Raises:
+        - DataStorageError: If the data size exceeds the remaining capacity of the nano chip.
+        """
+
+        # Checking if there is enough storage capacity to store the data on the nano chip.
+        if data_size <= self._nano_chip.remaining_capacity:
+            # Managing the data storage using the AI controller.
+            self._ai_controller.manage_data_storage(data_size, key, value)
+            return "Data stored on chip successfully."
+        else:
+            raise DataStorageError("Data size exceeds the remaining capacity of the nano chip.")
+
+    @property
+    def remaining_capacity(self) -> int:
+        """
+        Gets the remaining storage capacity of the nano chip.
+
+        Returns:
+        int: The remaining storage capacity.
+        """
+
+        return self._nano_chip.remaining_capacity
+
+    @property
+    def power_consumption(self) -> float:
+        """
+        Gets the power consumption of the nano chip.
+
+        Returns:
+        float: The power consumption.
+        """
+
+        return self._nano_chip.power_consumption
+
+
+class VirtualCloud:
+    """
+    A class representing a virtual cloud for storing data.
+
+    Attributes:
+    - data (dict): A dictionary to store the encrypted data.
+    """
+
+    def __init__(self):
+        """
+        Constructs a new VirtualCloud instance.
+        """
+
+        self.data = {}
+
+    def store_data(self, key: str, value: any, remaining_capacity: int):
+        """
+        Stores data in the virtual cloud.
+
+        Parameters:
+        - key (str): The key associated with the data.
+        - value (any): The value of the data.
+        - remaining_capacity (int): The remaining storage capacity of the nano chip.
+
+        Raises:
+        - DataStorageError: If the data size exceeds the remaining capacity of the nano chip.
+        """
+
+        # Encrypting the value before storing it.
+        encrypted_value = self._encrypt(value)
+        # Calculating the size of the encrypted value.
+        data_size = len(encrypted_value)
+        # Checking if there is enough remaining capacity to store the data.
+        if data_size <= remaining_capacity:
+            # Storing the encrypted value in the virtual cloud.
+            self.data[key] = encrypted_value
+            # Updating the remaining capacity after storing the data.
+            remaining_capacity -= data_size
+        else:
+            raise DataStorageError("Data size exceeds remaining capacity of the nano chip.")
+
+    def retrieve_data(self, key: str) -> any:
+        """
+        Retrieves data from the virtual cloud.
+
+        Parameters:
+        - key (str): The key associated with the data.
+
+        Returns:
+        any: The decrypted value of the data.
+
+        Raises:
+        - KeyError: If the data with the given key does not exist in the cloud.
+        """
+
+        if key in self.data:
+            # Decrypting the value before returning it.
+            decrypted_value = self._decrypt(self.data[key])
+            return decrypted_value
+        else:
+            raise KeyError(f"Data with key '{key}' does not exist in the cloud.")
+
+    def delete_data(self, key: str):
+        """
+        Deletes data from the virtual cloud.
+
+        Parameters:
+        - key (str): The key associated with the data.
+
+        Raises:
+        - KeyError: If the data with the given key does not exist in the cloud.
+        """
+
+        if key in self.data:
+            del self.data[key]
+        else:
+            raise KeyError(f"Data with key '{key}' does not exist in the cloud.")
+
+    def _encrypt(self, value: any) -> str:
+        """
+        Encrypts the value using a hashing algorithm.
+
+        Parameters:
+        - value (any): The value to be encrypted.
+
+        Returns:
+        str: The encrypted value.
+        """
+
+        # Using a hashing algorithm (SHA256) to encrypt the value.
+        encrypted_value = hashlib.sha256(str(value).encode()).hexdigest()
+        return encrypted_value
+
+    def _decrypt(self, encrypted_value: str) -> any:
+        """
+        Decrypts the encrypted value using a hashing algorithm.
+
+        Parameters:
+        - encrypted_value (str): The encrypted value to be decrypted.
+
+        Returns:
+        any: The decrypted value.
+        """
+
+        # Decrypting the encrypted value using the same hashing algorithm (SHA256).
+        decrypted_value = hashlib.sha256(str(encrypted_value).encode()).hexdigest()
+        return decrypted_value
+
+class VirtualCloud:
+    """
+    A class representing a virtual cloud storage system.
+
+    Attributes:
+    - data (dict): A dictionary to store the data files, where the keys are the file names and the values are the contents.
+    - remaining_capacity (int): The remaining storage capacity of the virtual cloud.
+
+    Methods:
+    - __init__(self, remaining_capacity): Initializes a new instance of the VirtualCloud class.
+    - store_data(self, file_name, content): Stores data in the virtual cloud.
+    - retrieve_data(self, file_name): Retrieves data from the virtual cloud.
+    - delete_data(self, file_name): Deletes data from the virtual cloud.
+    """
+
+    def __init__(self, remaining_capacity: int):
+        """
+        Initializes a new instance of the VirtualCloud class.
+
+        Parameters:
+        - remaining_capacity (int): The initial remaining storage capacity of the virtual cloud.
+        """
+
+        self.data = {}  # Initializing an empty dictionary to store the data files
+        self.remaining_capacity = remaining_capacity  # Setting the initial remaining capacity
+
+    def store_data(self, file_name: str, content: str):
+        """
+        Stores data in the virtual cloud.
+
+        Parameters:
+        - file_name (str): The name of the file to store.
+        - content (str): The content of the file to store.
+
+        Raises:
+        - DataStorageError: If the remaining capacity of the virtual cloud is not sufficient to store the data.
+        """
+
+        if self.remaining_capacity < len(content):
+            raise DataStorageError("Insufficient storage capacity")
+        self.data[file_name] = content  # Storing the data in the dictionary
+        self.remaining_capacity -= len(content)  # Updating the remaining capacity
+
+    def retrieve_data(self, file_name: str) -> str:
+        """
+        Retrieves data from the virtual cloud.
+
+        Parameters:
+        - file_name (str): The name of the file to retrieve.
+
+        Returns:
+        str: The content of the retrieved file.
+
+        Raises:
+        - KeyError: If the specified file does not exist in the virtual cloud.
+        """
+
+        if file_name not in self.data:
+            raise KeyError(f"File '{file_name}' does not exist")
+        return self.data[file_name]  # Returning the content of the file
+
+    def delete_data(self, file_name: str):
+        """
+        Deletes data from the virtual cloud.
+
+        Parameters:
+        - file_name (str): The name of the file to delete.
+
+        Raises:
+        - KeyError: If the specified file does not exist in the virtual cloud.
+        """
+
+        if file_name not in self.data:
+            raise KeyError(f"File '{file_name}' does not exist")
+        del self.data[file_name]  # Deleting the file from the dictionary
+
+
+# Remaining capacity of the nano chip
+data_size = 50
+remaining_capacity = data_size
+print(f"Remaining capacity of the nano chip: {remaining_capacity} GB.")
+
+# Power consumption of the nano chip
+power_consumption = 5
+print(f"Power consumption of the nano chip: {power_consumption} W.")
+
+# Create VirtualCloud instance with remaining capacity
+cloud = VirtualCloud(remaining_capacity)
+
+# Store data in the cloud
+try:
+    cloud.store_data("file2", "This is the content of file 2")
+    print("Data stored in file2")
+except DataStorageError as e:
+    print(f"Error while storing data: {e}")
+
+# Retrieve data from the cloud
+try:
+    data1 = cloud.retrieve_data("file1")
+    print(f"Data retrieved from file1: {data1}")
+except KeyError as e:
+    print(f"Error while retrieving data: {e}")
+
+# Delete data from the cloud
+try:
+    cloud.delete_data("file2")
+    print("Data deleted from file2")
+except KeyError as e:
+    print(f"Error while deleting data: {e}")
+
+# Try to retrieve deleted data (should raise an error)
+try:
+    data2 = cloud.retrieve_data("file2")
+    print(f"Data retrieved from file2: {data2}")
+except KeyError as e:
+    print(f"Error while retrieving data: {e}")
